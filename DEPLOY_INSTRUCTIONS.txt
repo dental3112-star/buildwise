@@ -1,0 +1,175 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  🚀 빌딩 수익 관리 앱 - Vercel 배포 가이드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 Figma Make에서는 직접 배포할 수 없습니다.
+   아래 방법 중 하나를 선택하여 배포하세요!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+방법 1️⃣  자동 스크립트 (가장 쉬움)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Figma Make에서 프로젝트 다운로드
+   - 좌측 메뉴 → "Export" 또는 "Download"
+   - ZIP 파일 다운로드 및 압축 해제
+
+2. 터미널 열기
+   - Mac: Terminal
+   - Windows: PowerShell 또는 CMD
+   
+3. 프로젝트 폴더로 이동
+   cd /path/to/building-revenue-manager
+
+4. 스크립트 실행
+   
+   Mac/Linux:
+   chmod +x deploy.sh
+   ./deploy.sh
+   
+   Windows:
+   deploy.bat
+
+5. 완료! URL이 출력됩니다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+방법 2️⃣  Vercel CLI (개발자용)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. 프로젝트 다운로드 및 압축 해제
+
+2. Vercel CLI 설치
+   npm install -g vercel
+
+3. 로그인
+   vercel login
+
+4. 배포
+   npm run deploy
+   
+   또는
+   
+   vercel --prod
+
+5. 환경 변수 입력
+   - VITE_SUPABASE_URL: https://uuaebyjxmvymyyvavjer.supabase.co
+   - VITE_SUPABASE_ANON_KEY: (Supabase에서 복사)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+방법 3️⃣  Vercel Dashboard (GUI)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. GitHub에 코드 업로드
+   
+   a. GitHub에서 새 리포지토리 생성
+      https://github.com/new
+      
+   b. 로컬에서 Git 초기화 및 푸시
+      git init
+      git add .
+      git commit -m "Initial commit"
+      git remote add origin https://github.com/YOUR_USERNAME/building-revenue-manager.git
+      git push -u origin main
+
+2. Vercel에서 Import
+   
+   a. https://vercel.com/new 접속
+   
+   b. "Import Git Repository" 선택
+   
+   c. GitHub 리포지토리 선택
+   
+   d. 환경 변수 추가:
+      VITE_SUPABASE_URL = https://uuaebyjxmvymyyvavjer.supabase.co
+      VITE_SUPABASE_ANON_KEY = (Supabase Anon Key)
+      NODE_ENV = production
+   
+   e. "Deploy" 버튼 클릭
+
+3. 2-3분 대기 후 완료!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 Supabase Anon Key 찾는 법
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. https://supabase.com/dashboard 접속
+2. 프로젝트 선택
+3. Settings → API 메뉴
+4. "anon public" 키 복사
+   (eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... 로 시작)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 배포 완료 후
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. URL 접속
+   https://building-revenue-manager-xxx.vercel.app
+
+2. /login 페이지에서 회원가입
+
+3. 대시보드 확인
+
+4. URL 공유하여 다른 사람 초대
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 더 자세한 정보
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- START_HERE.md - 빠른 시작 가이드
+- VERCEL_DEPLOY.md - 완전한 배포 가이드  
+- DEPLOY_NOW.md - 즉시 배포 가이드
+- DEPLOYMENT_CHECKLIST.md - 배포 체크리스트
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🆘 문제 해결
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"vercel: command not found"
+→ npm install -g vercel
+
+"Build failed"
+→ npm install
+→ npm run build
+→ vercel --prod
+
+"Environment variable missing"
+→ vercel env add VITE_SUPABASE_URL
+→ vercel env add VITE_SUPABASE_ANON_KEY
+→ vercel --prod
+
+로그인 안 됨
+→ Supabase URL/Key 확인
+→ 브라우저 콘솔(F12) 에러 확인
+→ 페이지 새로고침
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 추천 순서
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+빠른 테스트:
+  1. 프로젝트 다운로드
+  2. deploy.sh 또는 deploy.bat 실행
+  3. 완료!
+
+프로덕션:
+  1. GitHub에 업로드
+  2. Vercel Dashboard에서 Import
+  3. 자동 배포 설정
+  4. 커스텀 도메인 연결
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎉 성공을 기원합니다!
+
+문의: 
+- Vercel 문서: https://vercel.com/docs
+- Supabase 문서: https://supabase.com/docs
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

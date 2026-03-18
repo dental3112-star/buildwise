@@ -1,0 +1,713 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+
+  .header {
+    padding: 2rem 1.5rem 1.5rem;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .header-top {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+  }
+  .badge {
+    font-size: 11px; font-weight: 500; padding: 3px 10px;
+    border-radius: 20px; background: var(--color-background-info);
+    color: var(--color-text-info); white-space: nowrap;
+  }
+  .badge-warn {
+    background: var(--color-background-warning); color: var(--color-text-warning);
+  }
+  .badge-success {
+    background: var(--color-background-success); color: var(--color-text-success);
+  }
+  .badge-danger {
+    background: var(--color-background-danger); color: var(--color-text-danger);
+  }
+  h1 { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .subtitle { font-size: 14px; color: var(--color-text-secondary); margin-top: 4px; }
+
+  .tabs {
+    display: flex; gap: 0; border-bottom: 0.5px solid var(--color-border-tertiary);
+    padding: 0 1.5rem; overflow-x: auto;
+  }
+  .tab {
+    padding: 10px 16px; font-size: 13px; font-weight: 500; cursor: pointer;
+    color: var(--color-text-secondary); border-bottom: 2px solid transparent;
+    white-space: nowrap; transition: color .2s, border-color .2s;
+    background: none; border-top: none; border-left: none; border-right: none;
+  }
+  .tab.active { color: var(--color-text-primary); border-bottom-color: var(--color-text-primary); }
+  .tab:hover:not(.active) { color: var(--color-text-primary); }
+
+  .content { padding: 1.5rem; display: none; }
+  .content.active { display: block; }
+
+  .section-title {
+    font-size: 11px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--color-text-tertiary);
+    margin-bottom: 12px; margin-top: 20px;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  .card {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 1rem 1.25rem;
+    margin-bottom: 10px;
+  }
+  .card-row {
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .icon-box {
+    width: 36px; height: 36px; border-radius: var(--border-radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+    background: var(--color-background-secondary);
+  }
+  .card-body { flex: 1; }
+  .card-name { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 3px; }
+  .card-desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag {
+    font-size: 11px; padding: 2px 8px; border-radius: 20px;
+    background: var(--color-background-secondary);
+    color: var(--color-text-secondary); border: 0.5px solid var(--color-border-tertiary);
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 500px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .stat-card {
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 14px 16px;
+  }
+  .stat-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .stat-value { font-size: 20px; font-weight: 500; color: var(--color-text-primary); }
+
+  .flow-step {
+    display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px;
+  }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 500; color: var(--color-text-secondary);
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step-text { flex: 1; }
+  .step-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 2px; }
+  .step-desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+
+  .phase-bar {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .phase-pill {
+    font-size: 12px; font-weight: 500; padding: 4px 12px;
+    border-radius: 20px; border: 0.5px solid var(--color-border-tertiary);
+    color: var(--color-text-secondary); background: var(--color-background-secondary);
+  }
+  .phase-pill.active-phase {
+    background: var(--color-background-info); color: var(--color-text-info);
+    border-color: transparent;
+  }
+
+  .divider { height: 0.5px; background: var(--color-border-tertiary); margin: 16px 0; }
+
+  .risk-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 0;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .risk-row:last-child { border-bottom: none; }
+  .risk-label { flex: 1; font-size: 13px; color: var(--color-text-primary); }
+  .risk-action { font-size: 12px; color: var(--color-text-secondary); max-width: 200px; text-align: right; }
+
+  .revenue-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary);
+    font-size: 13px;
+  }
+  .revenue-row:last-child { border-bottom: none; }
+  .revenue-label { color: var(--color-text-secondary); }
+  .revenue-val { font-weight: 500; color: var(--color-text-primary); }
+  .revenue-val.minus { color: var(--color-text-danger); }
+  .revenue-val.total { color: var(--color-text-success); font-size: 15px; }
+</style>
+
+<div class="header">
+  <div class="header-top">
+    <span class="badge">앱 기획서 v1.0</span>
+    <span class="badge-success badge">MVP 기준</span>
+  </div>
+  <h1>🏢 빌딩 수익 관리 앱</h1>
+  <p class="subtitle">임대 수익 · 계약 · 납입 · 세금 · 수리 통합 관리 플랫폼</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('overview')">개요</button>
+  <button class="tab" onclick="showTab('features')">핵심 기능</button>
+  <button class="tab" onclick="showTab('income')">수익 계산</button>
+  <button class="tab" onclick="showTab('contract')">계약 관리</button>
+  <button class="tab" onclick="showTab('payment')">납입 추적</button>
+  <button class="tab" onclick="showTab('risk')">운영 지침</button>
+  <button class="tab" onclick="showTab('roadmap')">개발 로드맵</button>
+</div>
+
+<!-- 개요 -->
+<div id="tab-overview" class="content active">
+  <p class="section-title">앱 한 줄 정의</p>
+  <div class="card">
+    <p class="card-desc" style="font-size:14px; line-height:1.7;">
+      건물주가 임대 수익·관리비·세금·수리비를 입력하고, 계약서와 통장 내역을 업로드하면 — 수익 현황 대시보드, 계약 만료 알림, 미납 월세 감지, 6개월 운영 시뮬레이션을 자동으로 제공하는 올인원 자산 관리 앱.
+    </p>
+  </div>
+
+  <p class="section-title">핵심 사용자 흐름</p>
+  <div class="flow-step">
+    <div class="step-num">1</div>
+    <div class="step-text">
+      <div class="step-title">건물 등록</div>
+      <div class="step-desc">주소, 층수, 호실 수, 보증금·임대료 기본 정보 입력</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">2</div>
+    <div class="step-text">
+      <div class="step-title">자료 업로드</div>
+      <div class="step-desc">계약서(PDF), 통장 내역(Excel/CSV), 수리·관리비 영수증</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">3</div>
+    <div class="step-text">
+      <div class="step-title">AI 분석</div>
+      <div class="step-desc">계약 조건 파싱 → 납입 패턴 매칭 → 수익 자동 계산</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">4</div>
+    <div class="step-text">
+      <div class="step-title">대시보드 확인</div>
+      <div class="step-desc">수익 현황, 만료 예정 계약, 미납 세입자, 운영 지침 한눈에</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">5</div>
+    <div class="step-text">
+      <div class="step-title">알림 & 리포트</div>
+      <div class="step-desc">계약 만료 D-90/30, 미납 감지, 월간 수익 리포트 자동 발송</div>
+    </div>
+  </div>
+
+  <p class="section-title">타겟 사용자</p>
+  <div class="grid-2">
+    <div class="stat-card">
+      <div class="stat-label">주 타겟</div>
+      <div class="stat-value" style="font-size:15px;">1~5동 소규모 건물주</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">부 타겟</div>
+      <div class="stat-value" style="font-size:15px;">부동산 위탁 관리인</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">관리 유형</div>
+      <div class="stat-value" style="font-size:15px;">상가 · 오피스텔 · 주택</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">핵심 니즈</div>
+      <div class="stat-value" style="font-size:15px;">세금 신고 · 미납 추적</div>
+    </div>
+  </div>
+</div>
+
+<!-- 핵심 기능 -->
+<div id="tab-features" class="content">
+  <p class="section-title">필수 기능 (MVP)</p>
+
+  <div class="card card-row">
+    <div class="icon-box">📊</div>
+    <div class="card-body">
+      <div class="card-name">수익 대시보드</div>
+      <div class="card-desc">월 임대 수익, 관리비, 세금, 수리비 합산 → 실수익 자동 계산. 전월 대비 증감률 표시.</div>
+      <div class="tag-row"><span class="tag">월별 차트</span><span class="tag">실수익 계산</span><span class="tag">지출 분류</span></div>
+    </div>
+  </div>
+
+  <div class="card card-row">
+    <div class="icon-box">📄</div>
+    <div class="card-body">
+      <div class="card-name">계약서 분석 (AI)</div>
+      <div class="card-desc">PDF 계약서 업로드 → AI가 임차인명, 보증금, 월세, 계약 기간 자동 추출. 만료일 캘린더 등록.</div>
+      <div class="tag-row"><span class="tag">PDF 파싱</span><span class="tag">만료일 알림</span><span class="tag">자동 등록</span></div>
+    </div>
+  </div>
+
+  <div class="card card-row">
+    <div class="icon-box">🏦</div>
+    <div class="card-body">
+      <div class="card-name">통장 내역 납입 추적</div>
+      <div class="card-desc">통장 내역 CSV/Excel 업로드 → 세입자별 월세 자동 매칭. 미납·지연 자동 감지 및 알림.</div>
+      <div class="tag-row"><span class="tag">CSV 업로드</span><span class="tag">미납 감지</span><span class="tag">납입 이력</span></div>
+    </div>
+  </div>
+
+  <div class="card card-row">
+    <div class="icon-box">🔔</div>
+    <div class="card-body">
+      <div class="card-name">스마트 알림</div>
+      <div class="card-desc">계약 만료 D-90, D-30, D-7 알림. 월세 미납 시 자동 안내 문자 템플릿 제공.</div>
+      <div class="tag-row"><span class="tag">푸시 알림</span><span class="tag">문자 템플릿</span><span class="tag">이메일 발송</span></div>
+    </div>
+  </div>
+
+  <div class="card card-row">
+    <div class="icon-box">📅</div>
+    <div class="card-body">
+      <div class="card-name">6개월 운영 시뮬레이션</div>
+      <div class="card-desc">공실 발생, 수리비 급증, 세금 납부 시기 등 변수 시나리오별 수익 예측 및 대처 지침 제공.</div>
+      <div class="tag-row"><span class="tag">시나리오 분석</span><span class="tag">변수 대처법</span><span class="tag">현금흐름 예측</span></div>
+    </div>
+  </div>
+
+  <p class="section-title">추가 기능 (고도화)</p>
+
+  <div class="card card-row">
+    <div class="icon-box">🧾</div>
+    <div class="card-body">
+      <div class="card-name">세금 신고 자료 자동 생성</div>
+      <div class="card-desc">종합소득세·부가세 신고용 수입·지출 내역 자동 정리. 세무사 공유용 PDF 리포트 출력.</div>
+    </div>
+  </div>
+
+  <div class="card card-row">
+    <div class="icon-box">🔧</div>
+    <div class="card-body">
+      <div class="card-name">수리·유지보수 이력 관리</div>
+      <div class="card-desc">호실별 수리 내역, 업체 연락처, 보증 기간 기록. 정기 점검 리마인더 설정.</div>
+    </div>
+  </div>
+
+  <div class="card card-row">
+    <div class="icon-box">💬</div>
+    <div class="card-body">
+      <div class="card-name">세입자 커뮤니케이션</div>
+      <div class="card-desc">앱 내 문자 발송, 공지 전달. 세입자별 대화 이력 보관. 민원 접수 및 처리 현황 추적.</div>
+    </div>
+  </div>
+
+  <div class="card card-row">
+    <div class="icon-box">📈</div>
+    <div class="card-body">
+      <div class="card-name">수익률 분석 & 부동산 시세</div>
+      <div class="card-desc">투자 수익률(ROI) 자동 계산. 주변 임대 시세 비교 (공공 데이터 연동). 임대료 조정 가이드.</div>
+    </div>
+  </div>
+
+  <div class="card card-row">
+    <div class="icon-box">🤝</div>
+    <div class="card-body">
+      <div class="card-name">다중 사용자 권한</div>
+      <div class="card-desc">건물주 · 관리인 · 세무사 별도 접근 권한. 세무사에게 특정 기간 자료만 공유 가능.</div>
+    </div>
+  </div>
+</div>
+
+<!-- 수익 계산 -->
+<div id="tab-income" class="content">
+  <p class="section-title">수익 계산 구조</p>
+  <div class="card">
+    <div class="revenue-row">
+      <span class="revenue-label">월 임대 수익 합계</span>
+      <span class="revenue-val">+ 5,200,000원</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">관리비 수입</span>
+      <span class="revenue-val">+ 480,000원</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">관리비 지출 (전기·수도·청소)</span>
+      <span class="revenue-val minus">- 310,000원</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">수리·유지보수비</span>
+      <span class="revenue-val minus">- 120,000원</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">재산세·종합소득세 (월 환산)</span>
+      <span class="revenue-val minus">- 380,000원</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">대출 이자 (해당 시)</span>
+      <span class="revenue-val minus">- 650,000원</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label" style="font-weight:500;color:var(--color-text-primary);">월 실수익</span>
+      <span class="revenue-val total">= 4,220,000원</span>
+    </div>
+  </div>
+  <p style="font-size:12px; color:var(--color-text-tertiary); margin-top:6px;">※ 위는 예시 수치입니다. 실제 데이터 입력 시 자동 계산됩니다.</p>
+
+  <p class="section-title">입력 항목 분류</p>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-name" style="margin-bottom:8px;">📥 수입 항목</div>
+      <div class="card-desc">
+        월세 · 보증금 운용 이익<br>
+        관리비 수입<br>
+        주차비 · 기타 수입
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-name" style="margin-bottom:8px;">📤 지출 항목</div>
+      <div class="card-desc">
+        관리비 (공용 전기·수도)<br>
+        수리·인테리어비<br>
+        재산세 · 종합소득세<br>
+        건물 보험료<br>
+        대출 이자
+      </div>
+    </div>
+  </div>
+
+  <p class="section-title">세금 계산 지원</p>
+  <div class="card">
+    <div class="revenue-row">
+      <span class="revenue-label">주택임대소득 분리과세 (2천만원 이하)</span>
+      <span class="badge">자동 판별</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">종합소득세 합산 과세</span>
+      <span class="badge">안내 제공</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">부가가치세 (상가 임대)</span>
+      <span class="badge">자동 계산</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">재산세 납부 시기 알림</span>
+      <span class="badge-warn badge">6월·9월</span>
+    </div>
+  </div>
+</div>
+
+<!-- 계약 관리 -->
+<div id="tab-contract" class="content">
+  <p class="section-title">계약 정보 관리</p>
+  <div class="card">
+    <div class="revenue-row">
+      <span class="revenue-label">임차인명</span>
+      <span class="revenue-val">자동 추출 (AI)</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">계약 기간</span>
+      <span class="revenue-val">시작일 ~ 만료일 파싱</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">보증금</span>
+      <span class="revenue-val">금액 자동 인식</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">월세 금액</span>
+      <span class="revenue-val">자동 추출 및 등록</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">특약 사항</span>
+      <span class="revenue-val">텍스트 저장</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">원본 계약서</span>
+      <span class="revenue-val">PDF 보관</span>
+    </div>
+  </div>
+
+  <p class="section-title">만료 알림 타임라인</p>
+  <div class="flow-step">
+    <div class="step-num" style="background:var(--color-background-danger);color:var(--color-text-danger);">D-90</div>
+    <div class="step-text">
+      <div class="step-title">재계약 협의 시작 권장</div>
+      <div class="step-desc">세입자에게 갱신 의사 확인 요청 문자 템플릿 제공</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num" style="background:var(--color-background-warning);color:var(--color-text-warning);">D-30</div>
+    <div class="step-text">
+      <div class="step-title">계약 갱신 또는 퇴거 확정</div>
+      <div class="step-desc">갱신 계약서 작성 또는 퇴거 일정 협의. 보증금 반환 계획 안내.</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num" style="background:var(--color-background-info);color:var(--color-text-info);">D-7</div>
+    <div class="step-text">
+      <div class="step-title">최종 확인 알림</div>
+      <div class="step-desc">계약 만료 7일 전 최종 알림. 미확정 시 경고 알림 강화.</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num" style="background:var(--color-background-success);color:var(--color-text-success);">완료</div>
+    <div class="step-text">
+      <div class="step-title">갱신 계약 등록 또는 공실 전환</div>
+      <div class="step-desc">새 계약서 업로드 또는 공실 상태로 전환 및 수익 재계산</div>
+    </div>
+  </div>
+
+  <p class="section-title">계약 현황판</p>
+  <div class="card">
+    <div class="revenue-row">
+      <span class="revenue-label">전체 호실</span>
+      <span class="revenue-val">12호실</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">계약 중</span>
+      <span class="revenue-val" style="color:var(--color-text-success);">10호실</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">공실</span>
+      <span class="revenue-val minus">2호실</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">3개월 내 만료 예정</span>
+      <span class="revenue-val" style="color:var(--color-text-warning);">3호실</span>
+    </div>
+  </div>
+  <p style="font-size:12px; color:var(--color-text-tertiary); margin-top:6px;">※ 예시 데이터입니다.</p>
+</div>
+
+<!-- 납입 추적 -->
+<div id="tab-payment" class="content">
+  <p class="section-title">통장 내역 분석 방식</p>
+  <div class="flow-step">
+    <div class="step-num">1</div>
+    <div class="step-text">
+      <div class="step-title">파일 업로드</div>
+      <div class="step-desc">은행 앱에서 내역 다운로드 (CSV·Excel) → 앱 업로드</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">2</div>
+    <div class="step-text">
+      <div class="step-title">세입자 매칭</div>
+      <div class="step-desc">입금자명·금액·날짜를 계약서 정보와 자동 매칭. 이름이 다를 경우 수동 확인 요청.</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">3</div>
+    <div class="step-text">
+      <div class="step-title">미납 감지</div>
+      <div class="step-desc">매월 납입일 ±3일 이내 미입금 세입자 자동 표시. 지속 미납 시 경고 단계 상향.</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">4</div>
+    <div class="step-text">
+      <div class="step-title">리포트 생성</div>
+      <div class="step-desc">세입자별 납입 이력, 미납 횟수, 지연 일수 월간 리포트 자동 생성</div>
+    </div>
+  </div>
+
+  <p class="section-title">미납 단계 알림</p>
+  <div class="risk-row">
+    <span class="badge-warn badge">1단계</span>
+    <span class="risk-label">납입일 +3일 초과</span>
+    <span class="risk-action">문자 알림 템플릿 제공</span>
+  </div>
+  <div class="risk-row">
+    <span class="badge-danger badge">2단계</span>
+    <span class="risk-label">납입일 +10일 초과</span>
+    <span class="risk-action">내용증명 작성 가이드</span>
+  </div>
+  <div class="risk-row">
+    <span class="badge-danger badge">3단계</span>
+    <span class="risk-label">연속 2개월 미납</span>
+    <span class="risk-action">법적 조치 절차 안내</span>
+  </div>
+
+  <p class="section-title">납입 현황 예시</p>
+  <div class="card">
+    <div class="revenue-row">
+      <span class="revenue-label">이번 달 납입 완료</span>
+      <span class="revenue-val" style="color:var(--color-text-success);">8호실</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">미납 (3일 이내)</span>
+      <span class="revenue-val" style="color:var(--color-text-warning);">1호실</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">미납 (10일 초과)</span>
+      <span class="revenue-val minus">1호실</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">납입율</span>
+      <span class="revenue-val">80%</span>
+    </div>
+  </div>
+  <p style="font-size:12px; color:var(--color-text-tertiary); margin-top:6px;">※ 예시 데이터입니다.</p>
+</div>
+
+<!-- 운영 지침 -->
+<div id="tab-risk" class="content">
+  <p class="section-title">6개월 변수 대처 시뮬레이션</p>
+  <div class="card card-row">
+    <div class="icon-box">🏚️</div>
+    <div class="card-body">
+      <div class="card-name">공실 발생</div>
+      <div class="card-desc">공실 기간 수익 자동 차감 → 최소 필요 납입 호실 수 계산. 공실 기간 기준 수리·리모델링 적정 예산 가이드 제공.</div>
+    </div>
+  </div>
+  <div class="card card-row">
+    <div class="icon-box">🔨</div>
+    <div class="card-body">
+      <div class="card-name">수리비 급증</div>
+      <div class="card-desc">월 수리비가 임대 수익의 15% 초과 시 경고. 보수 vs 리모델링 손익분기 계산 제공.</div>
+    </div>
+  </div>
+  <div class="card card-row">
+    <div class="icon-box">📈</div>
+    <div class="card-body">
+      <div class="card-name">금리 인상</div>
+      <div class="card-desc">대출 이자 변동 입력 시 실수익 재계산. 임대료 조정 필요 금액 자동 안내.</div>
+    </div>
+  </div>
+  <div class="card card-row">
+    <div class="icon-box">⚖️</div>
+    <div class="card-body">
+      <div class="card-name">세법 변경</div>
+      <div class="card-desc">임대소득세율 변경 시 영향 시뮬레이션. 절세 전략 (필요경비 최대화) 안내.</div>
+    </div>
+  </div>
+  <div class="card card-row">
+    <div class="icon-box">🚪</div>
+    <div class="card-body">
+      <div class="card-name">세입자 분쟁</div>
+      <div class="card-desc">미납·퇴거 거부·원상복구 분쟁 단계별 법적 대응 절차 체크리스트. 내용증명 템플릿 자동 생성.</div>
+    </div>
+  </div>
+  <div class="card card-row">
+    <div class="icon-box">🌪️</div>
+    <div class="card-body">
+      <div class="card-name">재해·화재</div>
+      <div class="card-desc">건물 보험 정보 등록 및 보험료 관리. 재해 발생 시 보험 청구 절차 안내.</div>
+    </div>
+  </div>
+
+  <p class="section-title">현금 흐름 안전선 지표</p>
+  <div class="grid-2">
+    <div class="stat-card">
+      <div class="stat-label">비상 자금 권장</div>
+      <div class="stat-value" style="font-size:15px;">3개월치 고정비</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">수리비 적립 권장</div>
+      <div class="stat-value" style="font-size:15px;">월 임대 수익의 5%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">공실 허용 임계선</div>
+      <div class="stat-value" style="font-size:15px;">20% 이하 유지</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">대출 상환비율</div>
+      <div class="stat-value" style="font-size:15px;">수익의 40% 이하</div>
+    </div>
+  </div>
+</div>
+
+<!-- 로드맵 -->
+<div id="tab-roadmap" class="content">
+  <p class="section-title">개발 단계</p>
+
+  <div class="phase-bar">
+    <span class="phase-pill active-phase">1단계 MVP</span>
+    <span class="phase-pill">2단계 고도화</span>
+    <span class="phase-pill">3단계 플랫폼</span>
+  </div>
+
+  <div class="card">
+    <div class="card-name" style="margin-bottom:10px;">🚀 1단계 — MVP (3~4개월)</div>
+    <div class="flow-step" style="margin-bottom:8px;">
+      <div class="step-num" style="font-size:11px;">M1</div>
+      <div class="step-text"><div class="step-desc">기본 UI/UX 설계 · 데이터베이스 구조 설계</div></div>
+    </div>
+    <div class="flow-step" style="margin-bottom:8px;">
+      <div class="step-num" style="font-size:11px;">M2</div>
+      <div class="step-text"><div class="step-desc">건물·호실·계약 등록 · 수익 계산 기능</div></div>
+    </div>
+    <div class="flow-step" style="margin-bottom:8px;">
+      <div class="step-num" style="font-size:11px;">M3</div>
+      <div class="step-text"><div class="step-desc">통장 내역 업로드 · 납입 매칭 · 미납 알림</div></div>
+    </div>
+    <div class="flow-step" style="margin-bottom:0px;">
+      <div class="step-num" style="font-size:11px;">M4</div>
+      <div class="step-text"><div class="step-desc">계약서 PDF 업로드 · 만료 알림 · 베타 테스트</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-name" style="margin-bottom:10px;">⚙️ 2단계 — 고도화 (5~8개월)</div>
+    <div class="card-desc" style="line-height:1.8;">
+      AI 계약서 자동 파싱 · 세금 신고 자료 생성<br>
+      6개월 운영 시뮬레이션 · 수리 이력 관리<br>
+      세입자 커뮤니케이션 기능
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-name" style="margin-bottom:10px;">🌐 3단계 — 플랫폼 (9개월~)</div>
+    <div class="card-desc" style="line-height:1.8;">
+      부동산 시세 API 연동 · 수익률 비교<br>
+      다중 사용자 권한 · 세무사 공유<br>
+      SaaS 구독 모델 · 웹 + 앱 동시 제공
+    </div>
+  </div>
+
+  <p class="section-title">기술 스택 제안</p>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-name" style="margin-bottom:6px;">프론트엔드</div>
+      <div class="card-desc">React Native (앱)<br>Next.js (웹)<br>Tailwind CSS</div>
+    </div>
+    <div class="card">
+      <div class="card-name" style="margin-bottom:6px;">백엔드</div>
+      <div class="card-desc">Node.js / Python<br>PostgreSQL<br>AWS / Railway</div>
+    </div>
+    <div class="card">
+      <div class="card-name" style="margin-bottom:6px;">AI 기능</div>
+      <div class="card-desc">Claude API (계약서 파싱)<br>OpenAI (분류·요약)<br>PDF 파싱 라이브러리</div>
+    </div>
+    <div class="card">
+      <div class="card-name" style="margin-bottom:6px;">알림·연동</div>
+      <div class="card-desc">카카오 알림톡<br>문자 (SOLAPI)<br>이메일 (SendGrid)</div>
+    </div>
+  </div>
+
+  <p class="section-title">수익 모델</p>
+  <div class="card">
+    <div class="revenue-row">
+      <span class="revenue-label">무료 플랜</span>
+      <span class="revenue-val">건물 1동 · 호실 5개 이하</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">스탠다드 (월 9,900원)</span>
+      <span class="revenue-val">건물 3동 · 모든 기능</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">프리미엄 (월 29,900원)</span>
+      <span class="revenue-val">무제한 · AI 세금 리포트</span>
+    </div>
+    <div class="revenue-row">
+      <span class="revenue-label">기업 (견적)</span>
+      <span class="revenue-val">위탁 관리 법인 특화</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
