@@ -42,6 +42,13 @@ interface Contract {
   createdAt?: string;
 }
 
+const DEMO_CONTRACTS: Contract[] = [
+  { id: "c1", roomNumber: "201", tenant: "김철수", contact: "010-1234-5678", deposit: 10000000, monthlyRent: 500000, maintenanceFee: 50000, startDate: "2025-01-01", endDate: "2027-01-01", status: "active" },
+  { id: "c2", roomNumber: "301", tenant: "이영희", contact: "010-2345-6789", deposit: 15000000, monthlyRent: 650000, maintenanceFee: 60000, startDate: "2024-06-01", endDate: "2026-06-01", status: "active" },
+  { id: "c3", roomNumber: "401", tenant: "박민준", contact: "010-3456-7890", deposit: 12000000, monthlyRent: 580000, maintenanceFee: 55000, startDate: "2025-03-01", endDate: "2027-03-01", status: "active" },
+  { id: "c4", roomNumber: "502", tenant: "최수진", contact: "010-4567-8901", deposit: 8000000, monthlyRent: 420000, maintenanceFee: 45000, startDate: "2024-09-01", endDate: "2026-09-01", status: "expiring" },
+];
+
 export default function Contracts() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -52,17 +59,14 @@ export default function Contracts() {
       try {
         const response = await api.getContracts();
         setContracts(response.contracts || []);
-      } catch (error) {
+      } catch (error: any) {
+        if (error.message === 'DEMO_MODE') {
+          setContracts(DEMO_CONTRACTS);
+          return;
+        }
         console.error("Failed to fetch contracts:", error);
         toast.error("계약 정보를 가져오는 데 실패했습니다");
-        // Initialize sample data on first load
-        try {
-          await api.initializeSampleData();
-          const response = await api.getContracts();
-          setContracts(response.contracts || []);
-        } catch (initError) {
-          console.error("Failed to initialize data:", initError);
-        }
+        setContracts(DEMO_CONTRACTS);
       }
     };
 

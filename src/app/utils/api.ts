@@ -2,14 +2,25 @@ import { projectId, publicAnonKey } from '/utils/supabase/info';
 
 const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-663c61b0`;
 
+// Helper function to check demo mode
+function isDemoMode(): boolean {
+  return localStorage.getItem('accessToken') === 'demo-mode';
+}
+
 // Helper function to get access token
 function getAccessToken(): string {
   const token = localStorage.getItem('accessToken');
-  return token || publicAnonKey;
+  if (!token || token === 'demo-mode') return publicAnonKey;
+  return token;
 }
 
 // Helper function to make API calls
 async function apiCall(endpoint: string, options: RequestInit = {}) {
+  // In demo mode, skip all API calls and throw a gentle error
+  if (isDemoMode()) {
+    throw new Error('DEMO_MODE');
+  }
+
   const url = `${API_BASE_URL}${endpoint}`;
   
   const headers = {
@@ -27,7 +38,7 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       
-      // If unauthorized, redirect to login
+      // If unauthorized, redirect to login (not in demo mode)
       if (response.status === 401) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('userId');
