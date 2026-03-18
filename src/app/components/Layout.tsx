@@ -18,6 +18,10 @@ import { cn } from "./ui/utils";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
+import { createClient } from "@supabase/supabase-js";
+import { projectId, publicAnonKey } from "/utils/supabase/info";
+
+const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 const menuItems = [
   { path: "/", label: "수익 대시보드", icon: LayoutDashboard },
@@ -35,15 +39,39 @@ export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const unreadNotifications = 4; // Mock data
 
-  // Check if user is logged in
+  // Check if user is logged in (with Supabase session validation)
   useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) {
-      navigate("/login");
-    }
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Update token in case it was refreshed
+        localStorage.setItem("accessToken", session.access_token);
+      } else {
+        // Fallback: check localStorage (for cases where session isn't refreshed yet)
+        const accessToken = localStorage.getItem("accessToken");
+        if (!accessToken) {
+          navigate("/login");
+        }
+      }
+    };
+    checkAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || (!session && event !== "INITIAL_SESSION")) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("userId");
+        navigate("/login");
+      } else if (session) {
+        localStorage.setItem("accessToken", session.access_token);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem("accessToken");
     localStorage.removeItem("userId");
     toast.success("로그아웃되었습니다");

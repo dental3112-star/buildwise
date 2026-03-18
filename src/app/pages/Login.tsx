@@ -59,43 +59,26 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // Call server to create user with admin privileges
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-663c61b0/signup`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${publicAnonKey}`,
-          },
-          body: JSON.stringify({
-            email: signupEmail,
-            password: signupPassword,
-            name: signupName,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "회원가입에 실패했습니다");
-      }
-
-      toast.success("회원가입 성공! 로그인해주세요.");
-      
-      // Auto login after signup
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Use Supabase client directly (no Edge Function needed)
+      const { data, error } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
+        options: {
+          data: { name: signupName },
+        },
       });
 
       if (error) throw error;
 
       if (data.session) {
+        // Email confirmation not required — auto login
         localStorage.setItem("accessToken", data.session.access_token);
-        localStorage.setItem("userId", data.user.id);
+        localStorage.setItem("userId", data.user!.id);
+        toast.success("회원가입 성공! 환영합니다 🎉");
         navigate("/");
+      } else {
+        // Email confirmation required
+        toast.success("회원가입 성공! 이메일을 확인하여 인증해 주세요.");
       }
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -108,7 +91,7 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: window.location.origin,
@@ -116,12 +99,9 @@ export default function Login() {
       });
 
       if (error) throw error;
-
-      toast.info("구글 로그인 페이지로 이동합니다...");
     } catch (error: any) {
       console.error("Google login error:", error);
-      toast.error(error.message || "구글 로그인에 실패했습니다");
-      toast.info("구글 소셜 로그인을 활성화하려면 Supabase 대시보드에서 설정이 필요합니다.");
+      toast.error("구글 로그인을 사용하려면 Supabase 대시보드에서 Google OAuth 설정이 필요합니다. 이메일로 로그인해 주세요.");
     } finally {
       setIsLoading(false);
     }
