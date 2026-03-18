@@ -107,6 +107,14 @@ export default function Login() {
     }
   };
 
+  const handleDemoLogin = () => {
+    // Demo mode: store a demo flag and bypass auth
+    localStorage.setItem("accessToken", "demo-mode");
+    localStorage.setItem("userId", "demo-user");
+    toast.success("데모 모드로 시작합니다 🎉");
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -182,17 +190,25 @@ export default function Login() {
                 구글로 로그인
               </Button>
 
-              <p className="text-xs text-gray-500 text-center mt-4">
-                * 구글 로그인을 사용하려면{" "}
-                <a
-                  href="https://supabase.com/docs/guides/auth/social-login/auth-google"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  Supabase 설정
-                </a>
-                이 필요합니다
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-gray-500">또는</span>
+                </div>
+              </div>
+
+              <Button
+                variant="secondary"
+                className="w-full bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                onClick={handleDemoLogin}
+                disabled={isLoading}
+              >
+                🚀 데모로 먼저 체험하기
+              </Button>
+              <p className="text-xs text-gray-400 text-center mt-2">
+                데모 모드는 샘플 데이터로 앱을 체험할 수 있습니다
               </p>
             </TabsContent>
 
