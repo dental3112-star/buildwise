@@ -11,6 +11,7 @@ import {
   Bell,
   Settings as SettingsIcon,
   LogOut,
+  FileSearch,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "./ui/utils";
@@ -25,6 +26,7 @@ const menuItems = [
   { path: "/income", label: "수익 계산", icon: DollarSign },
   { path: "/simulation", label: "운영 시뮬레이션", icon: TrendingUp },
   { path: "/tax-report", label: "세금 리포트", icon: FileBarChart },
+  { path: "/documents", label: "AI 문서 분석", icon: FileSearch },
 ];
 
 export default function Layout() {

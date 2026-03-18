@@ -9,6 +9,7 @@ import TaxReport from "./pages/TaxReport";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
+import Documents from "./pages/Documents";
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
       { path: "tax-report", Component: TaxReport },
       { path: "notifications", Component: Notifications },
       { path: "settings", Component: Settings },
+      { path: "documents", Component: Documents },
     ],
   },
 ]);
