@@ -12,6 +12,12 @@ import {
   AlertTriangle,
   CheckCircle,
   Info,
+  TrendingUp,
+  Shield,
+  Calendar,
+  Receipt,
+  Lightbulb,
+  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -30,6 +36,16 @@ interface UploadedDocument {
   isAnalyzing?: boolean;
 }
 
+interface FinancialForecast {
+  safeMonths: number;
+  safetyLevel: "안전" | "주의" | "위험";
+  monthlyCashFlow: string;
+  expiringContracts: string[];
+  taxWarnings: string[];
+  recommendations: string[];
+  forecast6months: string;
+}
+
 interface AnalysisResult {
   documentType: string;
   summary: string;
@@ -41,6 +57,7 @@ interface AnalysisResult {
   };
   actionItems: string[];
   riskFlags: string[];
+  financialForecast: FinancialForecast;
 }
 
 function formatFileSize(bytes: number): string {
@@ -56,12 +73,17 @@ function getDocumentTypeBadgeColor(docType: string): string {
   return "bg-gray-100 text-gray-700";
 }
 
+function getSafetyColors(level: "안전" | "주의" | "위험") {
+  if (level === "안전") return { bg: "bg-green-50", text: "text-green-700", border: "border-green-200", badge: "bg-green-100 text-green-700" };
+  if (level === "주의") return { bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-200", badge: "bg-yellow-100 text-yellow-700" };
+  return { bg: "bg-red-50", text: "text-red-700", border: "border-red-200", badge: "bg-red-100 text-red-700" };
+}
+
 async function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // Strip data URL prefix to get raw base64
       const base64 = result.split(",")[1];
       resolve(base64);
     };
@@ -92,26 +114,37 @@ async function extractTextFromPDF(file: File): Promise<string> {
   }
 }
 
-async function analyzeDocument(
-  file: File,
-  apiKey: string
-): Promise<AnalysisResult> {
-  const systemPrompt = `당신은 한국 빌딩 임대 관리 전문가 AI입니다.
-업로드된 문서를 분석하여 다음 정보를 JSON 형식으로 추출해주세요:
+const SYSTEM_PROMPT = `당신은 한국 빌딩 임대 관리 전문가 AI입니다.
+업로드된 문서를 분석하여 다음 정보를 반드시 유효한 JSON 형식으로만 반환해주세요:
 {
   "documentType": "문서 유형 (계약서/영수증/세금계산서/기타)",
   "summary": "문서 내용 요약 (2-3문장)",
   "keyInfo": {
     "parties": ["관련 당사자들"],
-    "amounts": ["금액 정보"],
-    "dates": ["중요 날짜"],
-    "propertyInfo": "부동산 관련 정보"
+    "amounts": ["금액 정보 (예: 월세 50만원, 보증금 1000만원)"],
+    "dates": ["중요 날짜 (예: 계약 만료일, 납부 기한)"],
+    "propertyInfo": "부동산 관련 정보 (호수, 주소 등)"
   },
-  "actionItems": ["필요한 조치 사항들"],
-  "riskFlags": ["주의해야 할 사항들"]
+  "actionItems": ["즉시 필요한 조치 사항들"],
+  "riskFlags": ["주의해야 할 위험 사항들"],
+  "financialForecast": {
+    "safeMonths": 12,
+    "safetyLevel": "안전",
+    "monthlyCashFlow": "월 예상 수익/지출 요약",
+    "expiringContracts": ["만료 임박 계약 경고 (예: 3개월 내 만료 예정)"],
+    "taxWarnings": ["세금 관련 주의사항 (재산세, 종합소득세 등)"],
+    "recommendations": ["AI 추천 조치 사항 3-5개"],
+    "forecast6months": "향후 6개월 재무 전망 요약 (2-3문장)"
+  }
 }
-반드시 유효한 JSON만 반환하세요. 다른 텍스트는 포함하지 마세요.`;
+safeMonths는 현재 수익/지출 구조가 유지될 경우 재무적으로 안정적인 예상 기간(개월수)을 숫자로만 입력.
+safetyLevel은 "안전"(12개월 이상), "주의"(6-12개월), "위험"(6개월 미만) 중 하나.
+반드시 유효한 JSON만 반환하고 다른 텍스트는 포함하지 마세요.`;
 
+async function analyzeDocument(
+  file: File,
+  apiKey: string
+): Promise<AnalysisResult> {
   const isImage = file.type.startsWith("image/");
   const isPDF = file.type === "application/pdf";
 
@@ -163,8 +196,8 @@ async function analyzeDocument(
     },
     body: JSON.stringify({
       model: "gpt-4o",
-      messages: [{ role: "system", content: systemPrompt }, ...messages],
-      max_tokens: 1500,
+      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 2000,
       temperature: 0.1,
     }),
   });
@@ -180,11 +213,154 @@ async function analyzeDocument(
   const data = await response.json();
   const content = data.choices[0]?.message?.content ?? "";
 
-  // Extract JSON from the response (sometimes wrapped in markdown)
   const jsonMatch = content.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("JSON 파싱 오류: 응답에서 JSON을 찾을 수 없습니다");
 
   return JSON.parse(jsonMatch[0]) as AnalysisResult;
+}
+
+async function analyzeAllDocuments(
+  docs: UploadedDocument[],
+  apiKey: string
+): Promise<AnalysisResult> {
+  const combinedPrompt = `다음은 여러 문서들의 정보입니다. 모든 문서를 종합하여 전체적인 재무 상태와 전망을 분석해주세요:\n\n` +
+    docs
+      .filter((d) => d.analysis)
+      .map((d, i) => `[문서 ${i + 1}: ${d.name}]\n${JSON.stringify(d.analysis, null, 2)}`)
+      .join("\n\n---\n\n");
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: combinedPrompt },
+      ],
+      max_tokens: 2000,
+      temperature: 0.1,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(
+      (error as { error?: { message?: string } }).error?.message ||
+        `API 오류: ${response.status}`
+    );
+  }
+
+  const data = await response.json();
+  const content = data.choices[0]?.message?.content ?? "";
+
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("JSON 파싱 오류: 응답에서 JSON을 찾을 수 없습니다");
+
+  return JSON.parse(jsonMatch[0]) as AnalysisResult;
+}
+
+function FinancialForecastSection({ forecast }: { forecast: FinancialForecast }) {
+  const colors = getSafetyColors(forecast.safetyLevel);
+
+  return (
+    <div className="space-y-3">
+      {/* Financial Safety Card */}
+      <div className={`rounded-xl p-5 border-2 ${colors.bg} ${colors.border}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${colors.badge}`}>
+              <Shield className="size-5" />
+            </div>
+            <div>
+              <div className="text-xs font-medium text-gray-500 mb-0.5">재무 안전 예상 기간</div>
+              <div className="flex items-baseline gap-1.5">
+                <span className={`text-4xl font-bold ${colors.text}`}>{forecast.safeMonths}</span>
+                <span className={`text-lg font-semibold ${colors.text}`}>개월</span>
+              </div>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${colors.badge}`}>
+              {forecast.safetyLevel === "안전" ? "✓ 안전" : forecast.safetyLevel === "주의" ? "⚠ 주의" : "✕ 위험"}
+            </span>
+            <p className={`text-sm mt-2 max-w-[200px] ${colors.text} opacity-80`}>
+              {forecast.monthlyCashFlow}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 6개월 전망 */}
+      <div className="bg-white rounded-lg p-4 border border-blue-100">
+        <div className="flex items-center gap-2 mb-2">
+          <TrendingUp className="size-4 text-blue-500" />
+          <span className="text-sm font-semibold text-gray-700">6개월 재무 전망</span>
+        </div>
+        <p className="text-sm text-gray-600 leading-relaxed">{forecast.forecast6months}</p>
+      </div>
+
+      {/* Warnings & Recommendations Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* 계약 만료 경고 */}
+        {forecast.expiringContracts.length > 0 && (
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Calendar className="size-4 text-blue-600" />
+              <span className="text-xs font-semibold text-blue-700">계약 만료 경고</span>
+            </div>
+            <ul className="space-y-1">
+              {forecast.expiringContracts.map((item, i) => (
+                <li key={i} className="text-xs text-blue-600 flex items-start gap-1.5">
+                  <span className="mt-0.5 flex-shrink-0">•</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* 세금 주의사항 */}
+        {forecast.taxWarnings.length > 0 && (
+          <div className="bg-orange-50 rounded-lg p-3 border border-orange-100">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Receipt className="size-4 text-orange-600" />
+              <span className="text-xs font-semibold text-orange-700">세금 주의사항</span>
+            </div>
+            <ul className="space-y-1">
+              {forecast.taxWarnings.map((item, i) => (
+                <li key={i} className="text-xs text-orange-600 flex items-start gap-1.5">
+                  <span className="mt-0.5 flex-shrink-0">•</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* AI 추천 조치 */}
+        {forecast.recommendations.length > 0 && (
+          <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Lightbulb className="size-4 text-purple-600" />
+              <span className="text-xs font-semibold text-purple-700">AI 추천 조치</span>
+            </div>
+            <ul className="space-y-1">
+              {forecast.recommendations.map((item, i) => (
+                <li key={i} className="text-xs text-purple-600 flex items-start gap-1.5">
+                  <span className="mt-0.5 flex-shrink-0">{i + 1}.</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function Documents() {
@@ -193,6 +369,9 @@ export default function Documents() {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("openai_api_key") ?? "");
   const [showApiKey, setShowApiKey] = useState(false);
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
+  const [combinedAnalysis, setCombinedAnalysis] = useState<AnalysisResult | null>(null);
+  const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
+  const [showCombined, setShowCombined] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSaveApiKey = () => {
@@ -288,20 +467,108 @@ export default function Documents() {
     }
   };
 
+  const handleAnalyzeAll = async () => {
+    const key = apiKey.trim();
+    if (!key) {
+      toast.error("OpenAI API 키를 먼저 입력해주세요");
+      return;
+    }
+    const analyzedDocs = documents.filter((d) => d.analysis);
+    if (analyzedDocs.length === 0) {
+      toast.error("먼저 개별 문서를 분석해주세요");
+      return;
+    }
+
+    setIsAnalyzingAll(true);
+    try {
+      const result = await analyzeAllDocuments(analyzedDocs, key);
+      setCombinedAnalysis(result);
+      setShowCombined(true);
+      toast.success("전체 종합 분석이 완료되었습니다");
+    } catch (err) {
+      toast.error(
+        `종합 분석 오류: ${err instanceof Error ? err.message : "알 수 없는 오류"}`
+      );
+    } finally {
+      setIsAnalyzingAll(false);
+    }
+  };
+
+  const analyzedCount = documents.filter((d) => d.analysis).length;
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="bg-blue-100 p-2 rounded-lg">
-          <FileSearch className="size-6 text-blue-600" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="bg-blue-100 p-2 rounded-lg">
+            <FileSearch className="size-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">AI 문서 분석</h1>
+            <p className="text-sm text-gray-500">
+              계약서, 영수증, 세금계산서를 업로드하고 AI로 분석하세요
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">AI 문서 분석</h1>
-          <p className="text-sm text-gray-500">
-            계약서, 영수증, 세금계산서를 업로드하고 AI로 분석하세요
-          </p>
-        </div>
+        {documents.length >= 2 && (
+          <Button
+            onClick={handleAnalyzeAll}
+            disabled={isAnalyzingAll || analyzedCount === 0}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white flex-shrink-0 gap-2"
+          >
+            {isAnalyzingAll ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                종합 분석 중...
+              </>
+            ) : (
+              <>
+                <BarChart3 className="size-4" />
+                전체 문서 종합 분석
+                {analyzedCount > 0 && (
+                  <span className="bg-indigo-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {analyzedCount}
+                  </span>
+                )}
+              </>
+            )}
+          </Button>
+        )}
       </div>
+
+      {/* Combined Analysis Result */}
+      {combinedAnalysis && (
+        <Card className="border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-white overflow-hidden">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold flex items-center gap-2 text-indigo-800">
+                <BarChart3 className="size-5 text-indigo-600" />
+                전체 문서 종합 재무 분석
+                <Badge className="bg-indigo-100 text-indigo-700 text-xs">
+                  {analyzedCount}개 문서 기준
+                </Badge>
+              </CardTitle>
+              <button
+                onClick={() => setShowCombined((v) => !v)}
+                className="p-1.5 hover:bg-indigo-100 rounded-lg text-indigo-400 hover:text-indigo-600"
+              >
+                {showCombined ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+              </button>
+            </div>
+          </CardHeader>
+          {showCombined && (
+            <CardContent className="space-y-4">
+              <div className="bg-white/70 rounded-lg p-3 border border-indigo-100">
+                <p className="text-sm text-gray-700">{combinedAnalysis.summary}</p>
+              </div>
+              {combinedAnalysis.financialForecast && (
+                <FinancialForecastSection forecast={combinedAnalysis.financialForecast} />
+              )}
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {/* API Key Settings */}
       <Card>
@@ -407,6 +674,14 @@ export default function Documents() {
                     )}`}
                   >
                     {doc.analysis.documentType}
+                  </Badge>
+                )}
+                {doc.analysis?.financialForecast && (
+                  <Badge
+                    className={`flex-shrink-0 text-xs ${getSafetyColors(doc.analysis.financialForecast.safetyLevel).badge}`}
+                  >
+                    <Shield className="size-3 mr-1" />
+                    {doc.analysis.financialForecast.safetyLevel}
                   </Badge>
                 )}
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -547,6 +822,17 @@ export default function Documents() {
                           </li>
                         ))}
                       </ul>
+                    </div>
+                  )}
+
+                  {/* Financial Forecast */}
+                  {doc.analysis.financialForecast && (
+                    <div className="bg-white rounded-lg p-4 border border-gray-100">
+                      <div className="flex items-center gap-2 mb-3">
+                        <TrendingUp className="size-4 text-indigo-500" />
+                        <span className="text-sm font-semibold text-gray-700">재무 예측 분석</span>
+                      </div>
+                      <FinancialForecastSection forecast={doc.analysis.financialForecast} />
                     </div>
                   )}
                 </div>

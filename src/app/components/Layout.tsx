@@ -37,38 +37,57 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const unreadNotifications = 4; // Mock data
 
   // Check if user is logged in (with Supabase session validation)
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Update token in case it was refreshed
-        localStorage.setItem("accessToken", session.access_token);
-      } else {
-        // Fallback: check localStorage (for cases where session isn't refreshed yet)
-        const accessToken = localStorage.getItem("accessToken");
-        if (!accessToken) {
-          navigate("/login");
-        }
-      }
-    };
-    checkAuth();
-
-    // Listen for auth state changes
+    // Listen for auth state changes FIRST (before getSession)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT" || (!session && event !== "INITIAL_SESSION")) {
+      if (session) {
+        localStorage.setItem("accessToken", session.access_token);
+        localStorage.setItem("userId", session.user.id);
+        setAuthChecked(true);
+      } else if (event === "SIGNED_OUT") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userId");
         navigate("/login");
-      } else if (session) {
+      }
+    });
+
+    // Then check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
         localStorage.setItem("accessToken", session.access_token);
+        localStorage.setItem("userId", session.user.id);
+        setAuthChecked(true);
+      } else {
+        // Demo mode or no session
+        const token = localStorage.getItem("accessToken");
+        if (token === "demo-mode") {
+          setAuthChecked(true);
+        } else {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("userId");
+          navigate("/login");
+        }
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Show blank screen while checking auth (prevents flash-redirect)
+  if (!authChecked) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Building2 className="size-12 text-blue-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-500 text-sm">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
