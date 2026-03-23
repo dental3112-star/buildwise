@@ -537,6 +537,46 @@ export default function Documents() {
         )}
       </div>
 
+      {/* Required Documents Guide */}
+      <Card className="border border-blue-100 bg-blue-50/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+            📋 정확한 재무 분석을 위해 필요한 서류
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <div className="bg-white rounded-lg p-3 border border-blue-100">
+              <div className="font-semibold text-blue-700 mb-2">🏠 필수 서류</div>
+              <ul className="space-y-1 text-gray-600 text-xs">
+                <li>• 임대차 계약서 (전체 호실)</li>
+                <li>• 월세/관리비 납부 확인서</li>
+                <li>• 임대료 수입 내역서</li>
+              </ul>
+            </div>
+            <div className="bg-white rounded-lg p-3 border border-orange-100">
+              <div className="font-semibold text-orange-700 mb-2">💰 세금 관련</div>
+              <ul className="space-y-1 text-gray-600 text-xs">
+                <li>• 재산세 납부 고지서</li>
+                <li>• 종합소득세 신고서</li>
+                <li>• 세금계산서 / 영수증</li>
+              </ul>
+            </div>
+            <div className="bg-white rounded-lg p-3 border border-green-100">
+              <div className="font-semibold text-green-700 mb-2">🔧 지출 관련</div>
+              <ul className="space-y-1 text-gray-600 text-xs">
+                <li>• 수리비 / 유지보수 영수증</li>
+                <li>• 대출 이자 납부 내역</li>
+                <li>• 관리비 지출 내역서</li>
+              </ul>
+            </div>
+          </div>
+          <p className="text-xs text-blue-600 mt-3 bg-blue-100 rounded-lg px-3 py-2">
+            💡 <strong>팁:</strong> 서류가 많을수록 AI 분석이 정확해져요. 여러 파일 업로드 후 <strong>"전체 문서 종합 분석"</strong>을 사용하면 종합 재무 진단이 가능해요!
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Combined Analysis Result */}
       {combinedAnalysis && (
         <Card className="border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-white overflow-hidden">
