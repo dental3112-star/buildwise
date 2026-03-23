@@ -37,15 +37,7 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      
-      // If unauthorized, redirect to login (not in demo mode)
-      if (response.status === 401) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('userId');
-        window.location.href = '/login';
-        throw new Error('Unauthorized - Please login again');
-      }
-      
+      // Never redirect to login from API errors — just throw so UI can show fallback
       throw new Error(errorData.error || `API call failed: ${response.statusText}`);
     }
 

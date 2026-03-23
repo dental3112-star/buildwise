@@ -62,15 +62,24 @@ export default function Layout() {
         localStorage.setItem("userId", session.user.id);
         setAuthChecked(true);
       } else {
-        // Demo mode or no session
-        const token = localStorage.getItem("accessToken");
-        if (token === "demo-mode") {
-          setAuthChecked(true);
-        } else {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("userId");
-          navigate("/login");
-        }
+        // Try to refresh the session before giving up
+        supabase.auth.refreshSession().then(({ data: { session: refreshed } }) => {
+          if (refreshed) {
+            localStorage.setItem("accessToken", refreshed.access_token);
+            localStorage.setItem("userId", refreshed.user.id);
+            setAuthChecked(true);
+          } else {
+            // Demo mode check
+            const token = localStorage.getItem("accessToken");
+            if (token === "demo-mode") {
+              setAuthChecked(true);
+            } else {
+              localStorage.removeItem("accessToken");
+              localStorage.removeItem("userId");
+              navigate("/login");
+            }
+          }
+        });
       }
     });
 
