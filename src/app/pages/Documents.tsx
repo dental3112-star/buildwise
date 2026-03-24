@@ -18,12 +18,14 @@ import {
   Receipt,
   Lightbulb,
   BarChart3,
+  Table2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 interface UploadedDocument {
   id: string;
@@ -92,6 +94,39 @@ async function fileToBase64(file: File): Promise<string> {
   });
 }
 
+async function extractTextFromSpreadsheet(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+        const workbook = XLSX.read(data, { type: "binary" });
+        let fullText = "";
+        workbook.SheetNames.forEach((sheetName) => {
+          fullText += `[시트: ${sheetName}]\n`;
+          const sheet = workbook.Sheets[sheetName];
+          const csv = XLSX.utils.sheet_to_csv(sheet);
+          fullText += csv + "\n\n";
+        });
+        resolve(fullText.trim() || "[빈 스프레드시트]");
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsBinaryString(file);
+  });
+}
+
+function extractTextFromCSV(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve((e.target?.result as string) ?? "");
+    reader.onerror = reject;
+    reader.readAsText(file, "UTF-8");
+  });
+}
+
 async function extractTextFromPDF(file: File): Promise<string> {
   try {
     const pdfjsLib = await import("pdfjs-dist");
@@ -147,6 +182,8 @@ async function analyzeDocument(
 ): Promise<AnalysisResult> {
   const isImage = file.type.startsWith("image/");
   const isPDF = file.type === "application/pdf";
+  const isExcel = file.type.includes("spreadsheetml") || file.type.includes("ms-excel") || file.name.endsWith(".xlsx") || file.name.endsWith(".xls");
+  const isCSV = file.type === "text/csv" || file.name.endsWith(".csv");
 
   let messages: object[];
 
@@ -158,34 +195,24 @@ async function analyzeDocument(
         content: [
           {
             type: "image_url",
-            image_url: {
-              url: `data:${file.type};base64,${base64}`,
-              detail: "high",
-            },
+            image_url: { url: `data:${file.type};base64,${base64}`, detail: "high" },
           },
-          {
-            type: "text",
-            text: "이 문서 이미지를 분석해주세요.",
-          },
+          { type: "text", text: "이 문서 이미지를 분석해주세요." },
         ],
       },
     ];
   } else if (isPDF) {
     const text = await extractTextFromPDF(file);
-    messages = [
-      {
-        role: "user",
-        content: `다음은 PDF 문서에서 추출한 텍스트입니다. 분석해주세요:\n\n${text}`,
-      },
-    ];
+    messages = [{ role: "user", content: `다음은 PDF 문서에서 추출한 텍스트입니다. 분석해주세요:\n\n${text}` }];
+  } else if (isExcel) {
+    const text = await extractTextFromSpreadsheet(file);
+    messages = [{ role: "user", content: `다음은 Excel 파일에서 추출한 데이터입니다. 분석해주세요:\n\n${text}` }];
+  } else if (isCSV) {
+    const text = await extractTextFromCSV(file);
+    messages = [{ role: "user", content: `다음은 CSV 파일 데이터입니다. 분석해주세요:\n\n${text}` }];
   } else {
     const text = await extractTextFromPDF(file);
-    messages = [
-      {
-        role: "user",
-        content: `다음 문서를 분석해주세요:\n\n${text}`,
-      },
-    ];
+    messages = [{ role: "user", content: `다음 문서를 분석해주세요:\n\n${text}` }];
   }
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -384,10 +411,16 @@ export default function Documents() {
     const allowed = fileArray.filter(
       (f) =>
         f.type === "application/pdf" ||
-        f.type.startsWith("image/")
+        f.type.startsWith("image/") ||
+        f.type.includes("spreadsheetml") ||
+        f.type.includes("ms-excel") ||
+        f.type === "text/csv" ||
+        f.name.endsWith(".xlsx") ||
+        f.name.endsWith(".xls") ||
+        f.name.endsWith(".csv")
     );
     if (allowed.length < fileArray.length) {
-      toast.error("PDF 및 이미지 파일만 업로드할 수 있습니다");
+      toast.error("PDF, Excel, CSV 및 이미지 파일만 업로드할 수 있습니다");
     }
     const newDocs: UploadedDocument[] = allowed.map((f) => ({
       id: crypto.randomUUID(),
@@ -670,12 +703,12 @@ export default function Documents() {
             <p className="text-base font-medium text-gray-700 mb-1">
               파일을 드래그하거나 클릭하여 업로드
             </p>
-            <p className="text-sm text-gray-400">PDF, PNG, JPG, WEBP 지원</p>
+            <p className="text-sm text-gray-400">PDF, Excel (.xlsx/.xls), CSV, 이미지 (PNG/JPG) 지원</p>
             <input
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".pdf,image/*"
+              accept=".pdf,.xlsx,.xls,.csv,image/*"
               className="hidden"
               onChange={handleFileInput}
             />
@@ -696,6 +729,8 @@ export default function Documents() {
                 <div className="bg-blue-50 p-2 rounded-lg flex-shrink-0">
                   {doc.type.startsWith("image/") ? (
                     <Image className="size-5 text-blue-600" />
+                  ) : doc.type.includes("spreadsheetml") || doc.type.includes("ms-excel") || doc.name.endsWith(".xlsx") || doc.name.endsWith(".xls") || doc.type === "text/csv" || doc.name.endsWith(".csv") ? (
+                    <Table2 className="size-5 text-green-600" />
                   ) : (
                     <FileText className="size-5 text-blue-600" />
                   )}
